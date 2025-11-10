@@ -19,30 +19,76 @@ echo ""
 download_from_github_release() {
     echo "Downloading from GitHub Release..."
     REPO="Hank-Jiang40815/TF-GridNet-5090GPU"
-    RELEASE_TAG="v1.0.0-data"
-    ASSET_NAME="tfgridnet-data.tar.gz"
+    RELEASE_TAG="v1.0-training-data"
+    ASSET_NAME="tfgridnet_training_data_v1.0.tar.gz"
     
     echo "Repository: $REPO"
     echo "Release tag: $RELEASE_TAG"
     echo "Asset: $ASSET_NAME"
+    echo "Target directory: $DATA_DIR"
     echo ""
     
+    # 檢查資料是否已存在
+    if [ -d "$DATA_DIR/wavs" ] && [ "$(find $DATA_DIR/wavs -name '*.wav' | wc -l)" -ge 7000 ]; then
+        echo "✓ Training data already exists ($(find $DATA_DIR/wavs -name '*.wav' | wc -l) WAV files)"
+        echo "Skipping download."
+        return 0
+    fi
+    
     # Download using curl or wget
+    DOWNLOAD_PATH="/tmp/$ASSET_NAME"
+    echo "Downloading to $DOWNLOAD_PATH (388MB)..."
+    echo "This may take several minutes depending on your network speed..."
+    echo ""
+    
     if command -v curl &> /dev/null; then
-        curl -L "https://github.com/$REPO/releases/download/$RELEASE_TAG/$ASSET_NAME" -o /tmp/$ASSET_NAME
+        curl -L --progress-bar "https://github.com/$REPO/releases/download/$RELEASE_TAG/$ASSET_NAME" -o "$DOWNLOAD_PATH"
     elif command -v wget &> /dev/null; then
-        wget "https://github.com/$REPO/releases/download/$RELEASE_TAG/$ASSET_NAME" -O /tmp/$ASSET_NAME
+        wget --show-progress "https://github.com/$REPO/releases/download/$RELEASE_TAG/$ASSET_NAME" -O "$DOWNLOAD_PATH"
+    elif command -v gh &> /dev/null; then
+        gh release download "$RELEASE_TAG" --repo "$REPO" --pattern "$ASSET_NAME" --dir /tmp
     else
-        echo "Error: Neither curl nor wget found"
+        echo "Error: No download tool found (curl, wget, or gh)"
+        echo "Please install one of them:"
+        echo "  sudo apt install curl"
+        echo "  sudo apt install wget"
+        echo "  sudo apt install gh"
         exit 1
     fi
     
-    echo "Extracting..."
-    mkdir -p "$DATA_DIR"
-    tar -xzf /tmp/$ASSET_NAME -C "$DATA_DIR"
-    rm /tmp/$ASSET_NAME
+    echo ""
+    echo "Verifying download integrity..."
+    EXPECTED_MD5="d706a420f28adbd6c7177d9aad025aee"
+    ACTUAL_MD5=$(md5sum "$DOWNLOAD_PATH" | cut -d' ' -f1)
     
+    if [ "$ACTUAL_MD5" != "$EXPECTED_MD5" ]; then
+        echo "✗ Error: MD5 checksum mismatch!"
+        echo "  Expected: $EXPECTED_MD5"
+        echo "  Actual:   $ACTUAL_MD5"
+        echo "  Please try downloading again."
+        rm "$DOWNLOAD_PATH"
+        exit 1
+    fi
+    echo "✓ MD5 checksum verified"
+    
+    echo ""
+    echo "Extracting to $DATA_DIR..."
+    mkdir -p "$DATA_DIR"
+    tar -xzf "$DOWNLOAD_PATH" -C "$DATA_DIR"
+    rm "$DOWNLOAD_PATH"
+    
+    # 驗證資料完整性
+    WAV_COUNT=$(find "$DATA_DIR/wavs" -name "*.wav" | wc -l)
+    echo ""
     echo "✓ Download completed!"
+    echo "✓ Extracted $WAV_COUNT WAV files"
+    
+    if [ "$WAV_COUNT" -ne 7296 ]; then
+        echo "⚠ Warning: Expected 7296 files, found $WAV_COUNT"
+        echo "Please verify data integrity"
+    else
+        echo "✓ All files extracted successfully"
+    fi
 }
 
 # Function to download from Google Drive
