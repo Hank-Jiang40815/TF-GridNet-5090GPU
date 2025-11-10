@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  tfgridnet-train:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: tfgridnet-rtx5090:latest
+    container_name: tfgridnet-training
+    
+    # GPU configuration for RTX 5090
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    
+    # Environment variables
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=0
+      - CUDA_VISIBLE_DEVICES=0
+      - PYTHONUNBUFFERED=1
+    
+    # Volume mounts
+    volumes:
+      # Mount the TFG-Transfer-Package (adjust path as needed)
+      - /home/sbplab/Hank/ESPnet/TFG-Transfer-Package:/workspace/TFG-Transfer-Package:ro
+      # Mount experiments directory for outputs
+      - ./experiments:/workspace/experiments
+      # Mount configs
+      - ./configs:/workspace/configs:ro
+      # Mount scripts
+      - ./scripts:/workspace/scripts:ro
+    
+    # Working directory
+    working_dir: /workspace/TFG-Transfer-Package
+    
+    # Keep container running
+    stdin_open: true
+    tty: true
+    
+    # Network mode
+    network_mode: host
+    
+    # Shared memory size (important for data loading)
+    shm_size: '16gb'
+
+  # Optional: TensorBoard service
+  tensorboard:
+    image: tensorflow/tensorflow:latest
+    container_name: tfgridnet-tensorboard
+    command: tensorboard --logdir=/logs --host=0.0.0.0 --port=6006
+    ports:
+      - "6006:6006"
+    volumes:
+      - ./experiments:/logs:ro
+    profiles:
+      - tensorboard

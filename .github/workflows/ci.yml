@@ -1,0 +1,136 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  lint:
+    name: Lint and Validate
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Install dependencies
+      run: |
+        pip install pyyaml
+    
+    - name: Validate YAML configs
+      run: |
+        python -c "
+        import yaml
+        import sys
+        from pathlib import Path
+        
+        configs = Path('configs').glob('*.yaml')
+        for config in configs:
+            try:
+                with open(config) as f:
+                    yaml.safe_load(f)
+                print(f'✓ {config} is valid')
+            except Exception as e:
+                print(f'✗ {config} failed: {e}')
+                sys.exit(1)
+        "
+    
+    - name: Check scripts are executable
+      run: |
+        for script in scripts/*.sh; do
+          if [ ! -x "$script" ]; then
+            echo "Error: $script is not executable"
+            exit 1
+          fi
+        done
+        echo "✓ All scripts are executable"
+
+  docker-build:
+    name: Docker Build Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Build Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: false
+        tags: tfgridnet-rtx5090:test
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+    
+    - name: Verify image
+      run: |
+        docker images tfgridnet-rtx5090:test
+
+  # 註：Smoke test 需要 GPU，這裡僅驗證腳本語法
+  smoke-test-syntax:
+    name: Smoke Test Syntax Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Check smoke test script
+      run: |
+        bash -n scripts/run_smoke_test.sh
+        echo "✓ Smoke test script syntax is valid"
+    
+    - name: Check training script
+      run: |
+        bash -n scripts/run_training.sh
+        echo "✓ Training script syntax is valid"
+
+  documentation:
+    name: Documentation Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Check markdown files
+      run: |
+        # 檢查關鍵文檔是否存在
+        required_docs=(
+          "README.md"
+          "docs/SETUP.md"
+          "docs/TRAINING.md"
+          "docs/TROUBLESHOOTING.md"
+          "configs/README.md"
+          "experiments/README.md"
+        )
+        
+        for doc in "${required_docs[@]}"; do
+          if [ ! -f "$doc" ]; then
+            echo "Error: Required documentation $doc is missing"
+            exit 1
+          fi
+          echo "✓ Found $doc"
+        done
+        
+        echo "✓ All required documentation present"
+    
+    - name: Check for broken links (basic)
+      run: |
+        # 基本檢查 README 中的連結是否指向存在的檔案
+        grep -o '\[.*\](.*.md)' README.md | grep -o '(.*)' | tr -d '()' | while read link; do
+          if [ ! -f "$link" ] && [ ! -d "$link" ]; then
+            echo "Warning: Link to $link may be broken"
+          fi
+        done

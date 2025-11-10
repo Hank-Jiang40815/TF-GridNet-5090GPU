@@ -1,0 +1,77 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv*/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.venv-*/
+venv-*/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# PyCharm
+.idea/
+
+# VSCode
+.vscode/
+
+# Experiments and outputs (exclude actual experiment results, keep structure)
+experiments/logs/*
+!experiments/logs/.gitkeep
+experiments/checkpoints/
+*.pth
+*.pt
+*.ckpt
+
+# Data files (should be downloaded separately)
+data/
+*.wav
+*.flac
+*.mp3
+*.tar.gz
+*.zip
+
+# Model checkpoints
+checkpoints/
+
+# Logs (exclude runtime logs, keep structure)
+*.log
+logs/
+tensorboard_logs/
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Docker - Keep .dockerignore as it's important for build optimization
+# .dockerignore should be tracked
+
+# Temporary files
+tmp/
+temp/
+*.tmp

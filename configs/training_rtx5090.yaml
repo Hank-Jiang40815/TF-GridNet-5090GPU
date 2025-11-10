@@ -1,0 +1,156 @@
+# TF-GridNetV2 Training Configuration for RTX 5090
+# Optimized for NVIDIA GeForce RTX 5090 (32GB VRAM, CUDA 13.0)
+
+data:
+  preprocessing:
+    max_audio_length: 8000  # Can be increased with more VRAM
+    normalize_audio: true
+    target_sample_rate: 16000
+  # Note: Update these paths if data location changes
+  train_clean_scp: ./data/scp/train_clean_relative.scp
+  train_noisy_scp: ./data/scp/train_noisy_relative.scp
+  valid_clean_scp: ./data/scp/valid_clean_relative.scp
+  valid_noisy_scp: ./data/scp/valid_noisy_relative.scp
+
+experiment:
+  description: TF-GridNetV2 training on RTX 5090 with CUDA optimization
+  eval_interval: 1
+  log_interval: 10  # Log every 10 iterations
+  name: tfgridnetv2_rtx5090_baseline
+  save_best_only: true
+  save_dir: /workspace/experiments  # Will be mounted from host
+  save_interval: 5  # Save every 5 epochs
+  tags:
+  - tfgridnetv2
+  - rtx5090
+  - cuda
+  - gradient_checkpointing
+  - gradient_accumulation
+
+hardware:
+  use_cuda: true  # Changed from false
+  use_ddp: false  # Single GPU training
+  world_size: 1
+  device_ids:
+  - 0  # Changed from mps to CUDA device 0
+
+distributed:
+  master_port: 12365
+
+model:
+  name: TFGridNetV2_Optimized
+  stft:
+    hop_length: 256
+    n_fft: 512
+    win_length: 512
+    window: hann
+  architecture:
+    activation: prelu
+    attention_dropout: 0.1
+    emb_dim: 128  # Can increase to 192 or 256 with 32GB VRAM
+    emb_hs: 1
+    emb_ks: 1
+    eps: 1.0e-05
+    lstm_hidden_units: 128  # Can increase to 192 or 256
+    n_heads: 4  # Can increase to 8 for better attention
+    n_layers: 4  # Can increase to 6 for deeper model
+    n_srcs: 1
+    norm_type: GroupNorm
+    use_chunked_attention: true
+    attention_chunk_size: 64
+    use_cross_attention: false
+    use_dense_connections: false
+    use_freq_attention: true
+    use_gradient_checkpointing: true  # Memory saving
+    use_mixed_precision: true  # Changed from false - RTX 5090 supports bfloat16
+    use_multi_head_attention: true
+    use_residual_connections: true
+    use_squeeze_excitation: false
+    use_time_attention: true
+
+training:
+  batch_size: 32  # Increased from 16 (RTX 5090 has 32GB VRAM)
+  # Optimization tips:
+  # - With gradient accumulation, effective batch = 32 * 4 = 128
+  # - Can try batch_size: 64 or even 128 without accumulation
+  # - Monitor GPU memory with nvidia-smi
+  
+  epochs: 1000
+  
+  gradient_accumulation:
+    enabled: true
+    steps: 4  # Effective batch size = 32 * 4 = 128
+    # Can reduce steps to 2 or disable if using larger batch_size
+  
+  gradient_clipping:
+    enabled: true
+    max_norm: 0.5
+  
+  learning_rate: 0.0005  # May need tuning with larger batch size
+  # Consider using 0.001 with warmup for larger batches
+  
+  loss:
+    eps: 1.0e-07
+    name: si_snr  # SI-SNR loss for speech enhancement
+  
+  max_audio_length: 8000  # ~0.5 seconds at 16kHz
+  # Can increase to 16000 (1 second) or 32000 (2 seconds) with 32GB VRAM
+  
+  mixed_precision:
+    enabled: true  # Changed from false - use automatic mixed precision
+    opt_level: O1  # Conservative mixed precision
+    # RTX 5090 has excellent FP16/BF16 performance
+  
+  optimizer:
+    name: Adam
+    betas:
+    - 0.9
+    - 0.999
+    eps: 1.0e-08
+    weight_decay: 1.0e-06
+    # Consider AdamW for better regularization
+  
+  scheduler:
+    name: ReduceLROnPlateau
+    mode: min
+    factor: 0.5
+    patience: 100  # Can reduce to 50 for faster adaptation
+    # Alternative: CosineAnnealingLR for smoother decay
+
+misc:
+  num_workers: 4  # Changed from 0 - use multiple workers for data loading
+  # RTX 5090 system likely has good CPU, use 4-8 workers
+  # Adjust based on CPU core count (usually num_cores // 2)
+
+# Performance Optimization Notes for RTX 5090:
+#
+# 1. Batch Size Tuning:
+#    - Start with 32, monitor GPU memory
+#    - If memory < 24GB used, try 64
+#    - With gradient checkpointing, can often use 64-128
+#
+# 2. Mixed Precision:
+#    - RTX 5090 has excellent tensor core performance
+#    - Enable for 2-3x speedup
+#    - Monitor for numerical stability
+#
+# 3. Data Loading:
+#    - Use 4-8 num_workers
+#    - Pin memory if enough RAM
+#    - Consider prefetching
+#
+# 4. Model Scaling (for future experiments):
+#    - emb_dim: 128 → 192 or 256
+#    - lstm_hidden_units: 128 → 192 or 256
+#    - n_layers: 4 → 6 or 8
+#    - n_heads: 4 → 8
+#
+# 5. Audio Length:
+#    - Current: 8000 samples (~0.5s)
+#    - Can increase to 16000 (1s) or 32000 (2s)
+#    - Longer sequences = better context, more memory
+#
+# 6. Gradient Accumulation:
+#    - Current: 4 steps (effective batch = 128)
+#    - Can reduce if using larger batch_size
+#    - Trade-off: memory vs. update frequency

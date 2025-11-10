@@ -1,0 +1,45 @@
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+docs/
+
+# Data and experiments (mount these instead)
+data/
+experiments/logs/
+*.wav
+*.flac
+*.mp3
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+.venv*/
+venv*/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Large files
+*.tar.gz
+*.zip
+*.pth
+*.pt
+*.ckpt
