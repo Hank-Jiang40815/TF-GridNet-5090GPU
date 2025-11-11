@@ -23,7 +23,7 @@ echo ""
 echo "Creating experiment directory: $EXP_DIR"
 
 # Run training in container with experiment logging
-docker-compose run --rm tfgridnet-train bash -c "
+docker compose run --rm tfgridnet-train bash -c "
     set -e
     
     # Create experiment directory

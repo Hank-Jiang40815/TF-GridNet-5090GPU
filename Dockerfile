@@ -1,7 +1,8 @@
 # TF-GridNetV2 Training Environment for RTX 5090
-# Base: PyTorch 2.5.1 with CUDA 12.4 (compatible with CUDA 13.0 driver)
+# Base: PyTorch 2.9.0 official image with CUDA 12.8
+# Using the latest PyTorch version which may have better RTX 5090 support
 
-FROM pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime
+FROM pytorch/pytorch:2.9.0-cuda12.8-cudnn9-devel
 
 LABEL maintainer="Hank-Jiang40815"
 LABEL description="TF-GridNetV2 audio enhancement training on RTX 5090"
@@ -20,10 +21,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Upgrade pip
-RUN python -m pip install --no-cache-dir --upgrade pip
+RUN pip install --no-cache-dir --upgrade pip
 
-# Install Python dependencies
-# Note: PyTorch is already installed in base image
+# PyTorch is already installed from base image  
+# Skip torchaudio to avoid version conflicts, use soundfile instead
+
+# Install other Python dependencies (including soundfile as torchaudio alternative)
 RUN pip install --no-cache-dir \
     soundfile==0.12.1 \
     numpy==1.24.3 \
@@ -31,7 +34,8 @@ RUN pip install --no-cache-dir \
     tqdm \
     tensorboard \
     matplotlib \
-    scipy
+    scipy \
+    librosa
 
 # Create directories for mounting
 RUN mkdir -p /workspace/TFG-Transfer-Package \

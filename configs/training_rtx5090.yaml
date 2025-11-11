@@ -28,11 +28,11 @@ experiment:
   - gradient_accumulation
 
 hardware:
-  use_cuda: true  # Changed from false
+  use_cuda: true  # RTX 5090 fully supported with PyTorch 2.9.0!
   use_ddp: false  # Single GPU training
   world_size: 1
   device_ids:
-  - 0  # Changed from mps to CUDA device 0
+  - 0  # RTX 5090 GPU
 
 distributed:
   master_port: 12365
@@ -75,7 +75,7 @@ training:
   # - Can try batch_size: 64 or even 128 without accumulation
   # - Monitor GPU memory with nvidia-smi
   
-  epochs: 1000
+  epochs: 5000
   
   gradient_accumulation:
     enabled: true
