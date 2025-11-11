@@ -53,6 +53,12 @@ data/
 *.tar.gz
 *.zip
 
+# Experiment management - exclude full audio but keep selected samples
+experiments/inference_results/*/enhanced/
+experiments/inference_results/*/noisy/
+experiments/inference_results/*/clean/
+!experiments/inference_results/*/audio_samples/
+
 # Model checkpoints
 checkpoints/
 
