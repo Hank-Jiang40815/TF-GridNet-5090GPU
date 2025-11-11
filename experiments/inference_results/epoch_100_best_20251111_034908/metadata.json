@@ -1,0 +1,76 @@
+{
+  "experiment_name": "rtx5090-soundfile-5000ep",
+  "experiment_id": "epoch_100_best_20251111_034908",
+  "checkpoint": "checkpoint_epoch_100_best.pth",
+  "checkpoint_path": "/workspace/experiments/tfgridnetv2_rtx5090_baseline/checkpoint_epoch_100_best.pth",
+  "timestamp": "2025-11-11T03:49:00Z",
+  "model": {
+    "name": "TFGridNetV2",
+    "architecture": {
+      "n_layers": 4,
+      "lstm_hidden_units": 128,
+      "n_heads": 4,
+      "emb_dim": 128,
+      "n_fft": 512,
+      "hop_length": 256
+    }
+  },
+  "training": {
+    "total_epochs_trained": 1496,
+    "target_epochs": 5000,
+    "best_epoch": 100,
+    "best_valid_loss_db": 32.34,
+    "gpu": "NVIDIA GeForce RTX 5090",
+    "pytorch_version": "2.9.0+cu128",
+    "cuda_version": "12.8",
+    "audio_library": "soundfile + librosa",
+    "batch_size": 32,
+    "effective_batch_size": 128,
+    "learning_rate_initial": 0.0005,
+    "learning_rate_final": 6.1e-08
+  },
+  "evaluation": {
+    "num_samples": 192,
+    "metric": "SI-SNR",
+    "avg_noisy_si_snr_db": -36.40,
+    "avg_enhanced_si_snr_db": -35.30,
+    "avg_improvement_db": 1.10,
+    "std_improvement_db": 12.93,
+    "best_improvement_db": 43.34,
+    "best_sample_id": "00057",
+    "worst_improvement_db": -37.95,
+    "worst_sample_id": "00130"
+  },
+  "files": {
+    "audio_files": {
+      "total_count": 576,
+      "format": "WAV",
+      "sample_rate": 16000,
+      "channels": 1,
+      "in_git": false,
+      "local_path_enhanced": "enhanced/",
+      "local_path_noisy": "noisy/",
+      "local_path_clean": "clean/"
+    },
+    "committed_to_git": [
+      "README.md",
+      "metadata.json",
+      "evaluation_results.csv",
+      "highlights.txt",
+      "visualizations/"
+    ],
+    "regenerate_command": "python /workspace/scripts/evaluate_best_model.py"
+  },
+  "status": {
+    "training": "completed",
+    "evaluation": "completed",
+    "performance": "below_expected",
+    "needs_investigation": true
+  },
+  "notes": [
+    "Average improvement (+1.10 dB) is below expected threshold (>5 dB)",
+    "High variance in results (std=12.93 dB) indicates model instability",
+    "Some samples show negative improvement, suggesting potential issues",
+    "Requires investigation of data preprocessing and loss function"
+  ]
+}
